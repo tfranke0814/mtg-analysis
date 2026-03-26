@@ -1,0 +1,83 @@
+---
+title: "mtg-anlaysis"
+author: "Tyson Franke"
+date: "2026-03-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(jsonlite)
+```
+
+## Dataset
+
+We're using the default bulk dataset from scryfall. The dataset can be found here <https://scryfall.com/docs/api/bulk-data> or downloaded directly by clicking this link <https://data.scryfall.io/default-cards/default-cards-20260326090745.json>.
+
+**Note:** If downloading directly from the Scryfall website, the dataset will differ as it is updated frequently. For reproducibility, use the second, direct download link above.
+
+In order to load this json file, the script uses jq to filter the data prior to loading in R for efficiency due to the large size. To install jq for Windows you can run `winget install jqlang.jq` in the terminal. Otherwise, for Mac/Linux and Windows alternatives refer to <https://jqlang.org/download/>. The dataset is then cached as an rds file. If loading a new dataset you will need to delete the cached rds file.
+
+*When running the script the first time, it may still take a few minutes to load*
+
+```{r preprocess, include=FALSE}
+# Load from cached if available, otherwise file_path
+file_path = "./default-cards-20260326090745.json"
+rds_cache_path = "./cached_cards.rds"
+
+# ALL COLUMNS: 
+# > data <- fromJSON(file_path)
+# > names(data)
+#  [1] "object"              "id"                  "oracle_id"           "multiverse_ids"      "mtgo_id"             "arena_id"           
+#  [7] "tcgplayer_id"        "cardmarket_id"       "name"                "lang"                "released_at"         "uri"                
+# [13] "scryfall_uri"        "layout"              "highres_image"       "image_status"        "image_uris"          "mana_cost"          
+# [19] "cmc"                 "type_line"           "oracle_text"         "colors"              "color_identity"      "keywords"           
+# [25] "produced_mana"       "legalities"          "games"               "reserved"            "game_changer"        "foil"               
+# [31] "nonfoil"             "finishes"            "oversized"           "promo"               "reprint"             "variation"          
+# [37] "set_id"              "set"                 "set_name"            "set_type"            "set_uri"             "set_search_uri"     
+# [43] "scryfall_set_uri"    "rulings_uri"         "prints_search_uri"   "collector_number"    "digital"             "rarity"             
+# [49] "card_back_id"        "artist"              "artist_ids"          "illustration_id"     "border_color"        "frame"              
+# [55] "full_art"            "textless"            "booster"             "story_spotlight"     "prices"              "related_uris"       
+# [61] "purchase_uris"       "mtgo_foil_id"        "power"               "toughness"           "flavor_text"         "edhrec_rank"        
+# [67] "penny_rank"          "all_parts"           "promo_types"         "security_stamp"      "card_faces"          "preview"            
+# [73] "watermark"           "frame_effects"       "loyalty"             "printed_name"        "resource_id"         "tcgplayer_etched_id"
+# [79] "flavor_name"         "attraction_lights"   "color_indicator"     "printed_type_line"   "printed_text"        "variation_of"       
+# [85] "life_modifier"       "hand_modifier"       "content_warning"     "defense"
+
+# SELECTED COLUMNS
+cols <-  c("object", "id", "oracle_id", "name", "lang", "released_at", "layout", 
+           "mana_cost", "cmc", "type_line", "oracle_text", "colors", "color_identity", "keywords", "produced_mana", 
+           "legalities", "games", "reserved", "game_changer", "foil", "nonfoil", "finishes", "oversized", "promo", "reprint", 
+           "set", "set_name", "set_type", "collector_number", "digital", "rarity", "artist", "border_color", "frame", "full_art", 
+           "textless", "booster", "power", "toughness", "flavor_text", "loyalty"
+           )
+
+if (!file.exists("cached_cards.rds")) {
+  jq_filter <- paste0(".[] | {", paste(cols, collapse=", "), "}")
+  system2("jq", 
+          args = c("-c", shQuote(jq_filter), shQuote(file_path)), 
+          stdout = "jq_filtered_cards.ndjson")
+  data <- stream_in(file("jq_filtered_cards.ndjson"), verbose = TRUE)
+  saveRDS(data, rds_cache_path)
+} else {
+  print("Loading from cached dataset: cached_cards.rds")
+  data <- readRDS(rds_cache_path)
+}
+```
+
+
+```{r}
+head(data)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

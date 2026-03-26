@@ -1,0 +1,8 @@
+# Scryfall dataset and post-jq preprocessing
+*.json
+*.ndjson
+*.rds
+
+# RMD knitted output
+*.html
+*.pdf
