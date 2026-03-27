@@ -6,3 +6,6 @@
 # RMD knitted output
 *.html
 *.pdf
+
+.RData
+.Rhistory

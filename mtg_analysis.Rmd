@@ -1,8 +1,18 @@
 ---
-title: "mtg-anlaysis"
+title: "Magic: The Gathering - A History of Stats"
 author: "Tyson Franke"
 date: "2026-03-26"
-output: html_document
+output: 
+  html_document:
+    theme:  
+      bootswatch: "simplex"
+      bg: "#f8f5f0"
+      fg: "#222222"
+      font_scale: 0.9
+    highlight: "tango"
+    toc: true
+    toc_float: true
+    css: "styles.css"
 ---
 
 ```{r setup, include=FALSE}
@@ -10,13 +20,15 @@ library(tidyverse)
 library(jsonlite)
 ```
 
+\{Introduction\}
+
 ## Dataset
 
-We're using the default bulk dataset from scryfall. The dataset can be found here <https://scryfall.com/docs/api/bulk-data> or downloaded directly by clicking this link <https://data.scryfall.io/default-cards/default-cards-20260326090745.json>.
+We're using the default bulk dataset from scryfall. The dataset can be found here <https://scryfall.com/docs/api/bulk-data> or downloaded directly by clicking this link <https://data.scryfall.io/default-cards/default-cards-20260326090745.json>. The default bulk dataset contains only the English version of a printing, unless the card is only available in one language, e.g. printings exclusive to the set *Chronicles Foreign Black Border* or a Secret Lair card printed in the Phyrexian language.
 
 **Note:** If downloading directly from the Scryfall website, the dataset will differ as it is updated frequently. For reproducibility, use the second, direct download link above.
 
-In order to load this json file, the script uses jq to filter the data prior to loading in R for efficiency due to the large size. To install jq for Windows you can run `winget install jqlang.jq` in the terminal. Otherwise, for Mac/Linux and Windows alternatives refer to <https://jqlang.org/download/>. The dataset is then cached as an rds file. If loading a new dataset you will need to delete the cached rds file.
+In order to load this json file, the script uses jq to filter the data columns prior to loading in R for efficiency due to the large size. To install jq for Windows you can run `winget install jqlang.jq` in the terminal. Otherwise, for Mac/Linux and Windows alternatives refer to <https://jqlang.org/download/>. The dataset is then cached as an rds file. If loading a new dataset you will need to delete the cached rds file.
 
 *When running the script the first time, it may still take a few minutes to load*
 
@@ -65,19 +77,20 @@ if (!file.exists("cached_cards.rds")) {
 }
 ```
 
-
-```{r}
-head(data)
+```{r, echo=FALSE, class.output="glimpse-trunc"}
+# Remaining columns after filtering via jq
+glimpse(data)
 ```
 
-## Including Plots
+## Data Cleaning
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r cleaning}
+df <- data %>%  filter(
+    digital == FALSE,         # Only physical print (not MTGO or Arena exclusive)
+    layout != "art_series"    # Omit art cards
+  ) %>% 
+  mutate(
+    released_at = as.Date(released_at),
+    year = year(released_at)
+  )
 ```
-
-
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
